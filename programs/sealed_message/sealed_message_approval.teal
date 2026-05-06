@@ -1,0 +1,227 @@
+#pragma version 8
+txn NumAppArgs
+int 0
+==
+bnz main_l10
+txna ApplicationArgs 0
+method "send_message(byte[32],byte[])void"
+==
+bnz main_l9
+txna ApplicationArgs 0
+method "send_alias_message(byte[32],byte[32],byte[])void"
+==
+bnz main_l8
+txna ApplicationArgs 0
+method "set_username(byte[],byte[32],byte[32])void"
+==
+bnz main_l7
+txna ApplicationArgs 0
+method "publish_pq_key(byte[])void"
+==
+bnz main_l6
+err
+main_l6:
+txn OnCompletion
+int NoOp
+==
+txn ApplicationID
+int 0
+!=
+&&
+assert
+callsub publishpqkeycaster_7
+int 1
+return
+main_l7:
+txn OnCompletion
+int NoOp
+==
+txn ApplicationID
+int 0
+!=
+&&
+assert
+callsub setusernamecaster_6
+int 1
+return
+main_l8:
+txn OnCompletion
+int NoOp
+==
+txn ApplicationID
+int 0
+!=
+&&
+assert
+callsub sendaliasmessagecaster_5
+int 1
+return
+main_l9:
+txn OnCompletion
+int NoOp
+==
+txn ApplicationID
+int 0
+!=
+&&
+assert
+callsub sendmessagecaster_4
+int 1
+return
+main_l10:
+txn OnCompletion
+int NoOp
+==
+bnz main_l16
+txn OnCompletion
+int UpdateApplication
+==
+bnz main_l15
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l14
+err
+main_l14:
+txn Sender
+global CreatorAddress
+==
+return
+main_l15:
+txn Sender
+global CreatorAddress
+==
+return
+main_l16:
+txn ApplicationID
+int 0
+==
+assert
+int 1
+return
+
+// send_message
+sendmessage_0:
+proto 2 0
+frame_dig -1
+extract 2 0
+log
+int 1
+return
+
+// send_alias_message
+sendaliasmessage_1:
+proto 3 0
+frame_dig -1
+extract 2 0
+log
+int 1
+return
+
+// set_username
+setusername_2:
+proto 3 0
+frame_dig -3
+extract 2 0
+len
+int 0
+>
+assert
+frame_dig -3
+extract 2 0
+len
+int 64
+<=
+assert
+txn Sender
+log
+frame_dig -3
+extract 2 0
+log
+frame_dig -2
+log
+frame_dig -1
+log
+int 1
+return
+
+// publish_pq_key
+publishpqkey_3:
+proto 1 0
+frame_dig -1
+extract 2 0
+len
+int 32
+>=
+assert
+frame_dig -1
+extract 2 0
+len
+int 2048
+<=
+assert
+txn Sender
+log
+frame_dig -1
+extract 2 0
+log
+int 1
+return
+
+// send_message_caster
+sendmessagecaster_4:
+proto 0 0
+byte ""
+dup
+txna ApplicationArgs 1
+frame_bury 0
+txna ApplicationArgs 2
+frame_bury 1
+frame_dig 0
+frame_dig 1
+callsub sendmessage_0
+retsub
+
+// send_alias_message_caster
+sendaliasmessagecaster_5:
+proto 0 0
+byte ""
+dupn 2
+txna ApplicationArgs 1
+frame_bury 0
+txna ApplicationArgs 2
+frame_bury 1
+txna ApplicationArgs 3
+frame_bury 2
+frame_dig 0
+frame_dig 1
+frame_dig 2
+callsub sendaliasmessage_1
+retsub
+
+// set_username_caster
+setusernamecaster_6:
+proto 0 0
+byte ""
+dupn 2
+txna ApplicationArgs 1
+frame_bury 0
+txna ApplicationArgs 2
+frame_bury 1
+txna ApplicationArgs 3
+frame_bury 2
+frame_dig 0
+frame_dig 1
+frame_dig 2
+callsub setusername_2
+retsub
+
+// publish_pq_key_caster
+publishpqkeycaster_7:
+proto 0 0
+byte ""
+txna ApplicationArgs 1
+frame_bury 0
+frame_dig 0
+callsub publishpqkey_3
+retsub

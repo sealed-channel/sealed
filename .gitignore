@@ -1,0 +1,99 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Firebase config files (sensitive)
+sealed_app/android/app/google-services.json
+sealed_app/ios/Runner/GoogleService-Info.plist
+sealed_app/lib/firebase_options.dart
+
+# Android signing (sensitive)
+sealed_app/android/upload-keystore.jks
+sealed_app/android/key.properties
+
+# Environment variables
+.env*
+
+# Internal development files (not for public repo)
+internal/
+
+# Local tooling configs
+.mcp.json
+.windsurf/
+.vscode/
+
+# SSH keys
+*.pem
+*.key
+!*.key.pub
+
+# APNs signing keys (Apple .p8) — NEVER commit
+*.p8
+sealed-indexer/apns_keys/
+
+# Indexer infra (docker-compose, torrc reveal hostnames/IPs) — ship .example only.
+# We DO commit *.example variants and the Dockerfile.
+
+!sealed-indexer/docker/*.example
+!sealed-indexer/docker/Dockerfile
+!sealed-indexer/docker/torrc.example
+
+
+# Indexer local DB / FCM creds
+sealed-indexer/indexer.db
+*-service-account.json
+**/admin-account.json
+
+# Web
+sealed_app/web/*.js.deps
+sealed_app/web/*.js.map
+
+# Windows
+*.msix
+
+# macOS
+*.app
+
+# Linux
+*.snap

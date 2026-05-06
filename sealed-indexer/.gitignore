@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.env
+.env.local
+coverage/
+
+# FCM service-account credentials (Google service-account JSON).
+# Mounted into the container at /app/fcm/admin-account.json — see
+# docker/docker-compose.yml. MUST NOT be committed.
+admin-account.json
+*-service-account.json

@@ -1,0 +1,66 @@
+{
+  "name": "AliasChannel",
+  "methods": [
+    {
+      "name": "create_channel",
+      "args": [
+        {
+          "type": "byte[]",
+          "name": "channel_id"
+        },
+        {
+          "type": "byte[32]",
+          "name": "creator_pubkey"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "desc": "Create a new alias channel box.\nCaller pays MBR for the box."
+    },
+    {
+      "name": "accept_channel",
+      "args": [
+        {
+          "type": "byte[]",
+          "name": "channel_id"
+        },
+        {
+          "type": "byte[32]",
+          "name": "acceptor_pubkey"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "desc": "Accept an existing alias channel by writing the acceptor's pubkey.\nOnly works if channel is in pending state. Acceptor must NOT be the creator (different sender)."
+    },
+    {
+      "name": "delete_channel",
+      "args": [
+        {
+          "type": "byte[]",
+          "name": "channel_id"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "desc": "Delete an alias channel box and refund the 44 500 \u00b5Algo box MBR to the\ncaller.  The outer transaction must carry fee >= 2 * min_fee (2 000 \u00b5Algo) so the inner payment can use fee=0 via fee pooling."
+    },
+    {
+      "name": "read_channel",
+      "args": [
+        {
+          "type": "byte[]",
+          "name": "channel_id"
+        }
+      ],
+      "returns": {
+        "type": "byte[]"
+      },
+      "desc": "Read an alias channel box.\nReturns the full 73-byte box contents."
+    }
+  ],
+  "networks": {}
+}

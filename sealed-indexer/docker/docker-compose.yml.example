@@ -1,0 +1,103 @@
+# docker-compose for the Sealed Indexer running on a Raspberry Pi 4B.
+#
+# This is the EXAMPLE / public version. The real docker-compose.yml is
+# gitignored (see /.gitignore). Copy this file:
+#
+#   cp docker-compose.yml.example docker-compose.yml
+#
+# ...and tweak as needed. Sensitive values (APNs key/team/bundle IDs, FCM
+# project ID, dispatcher private key, OHTTP gateway HPKE seed) come from
+# ../.env — see ../.env.example.
+#
+# Two services, both arm64:
+#   ohttp-gateway   — Cloudflare privacy-gateway-server (RFC 9458). It
+#                     decapsulates OHTTP requests arriving from the upstream
+#                     relay (Oblivious.Network) and forwards plaintext HTTP
+#                     to the indexer container on the internal docker network.
+#   sealed-indexer  — this repository, built from ./Dockerfile.
+#
+# Public reachability is provided by Tailscale Funnel on the Pi host
+# (NOT inside docker), which proxies https://<host>.<tailnet>.ts.net:443
+# to the gateway container's published port (127.0.0.1:8080). See
+# pi-gateway/README.md.
+#
+# Persistent state lives on the USB SSD mounted at /mnt/sealed-data on the
+# Pi (NOT the SD card — SQLite WAL writes will wear an SD card out).
+# Override *_DATA_ROOT vars to point elsewhere on a developer workstation.
+#
+# Secrets bundle (apns_keys/, admin-account.json, .env) lives at
+# ${SECRETS_ROOT:-/mnt/sealed-data/secrets} on the Pi and is populated by
+# scripts/deploy_secrets_to_pi.sh from a developer machine. It is NEVER
+# checked into git — neither this repo nor any private mirror.
+
+services:
+  ohttp-gateway:
+    # Cloudflare's privacy-gateway-server-go. The published image is
+    # access-restricted; build locally from source:
+    #   git clone https://github.com/cloudflare/privacy-gateway-server-go.git
+    #   docker build -t local/ohttp-gateway:latest privacy-gateway-server-go
+    image: local/ohttp-gateway:latest
+    platform: linux/arm64
+    container_name: sealed-ohttp-gateway
+    restart: unless-stopped
+    # SEED_SECRET_KEY (32-byte hex) + CONFIGURATION_ID come from
+    # $SECRETS_ROOT/.env. Generate seed: openssl rand -hex 32
+    env_file:
+      - "${SECRETS_ROOT:-/mnt/sealed-data/secrets}/.env"
+    environment:
+      PORT: "8080"
+      # Restrict what target origins the gateway will forward to.
+      ALLOWED_TARGET_ORIGINS: "sealed-indexer:3000"
+      GATEWAY_ENDPOINT: "/gateway"
+      CONFIG_ENDPOINT: "/.well-known/ohttp-gateway"
+      HEALTH_ENDPOINT: "/health"
+      LOG_LEVEL: "info"
+    ports:
+      # Tailscale Funnel on the host proxies :443 -> 127.0.0.1:8080.
+      - "127.0.0.1:8080:8080"
+    networks:
+      sealed-net: {}
+    depends_on:
+      - sealed-indexer
+
+  sealed-indexer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    platform: linux/arm64
+    container_name: sealed-indexer
+    restart: unless-stopped
+    env_file:
+      - "${SECRETS_ROOT:-/mnt/sealed-data/secrets}/.env"
+    environment:
+      NODE_ENV: "production"
+      PORT: "3000"
+      LOG_LEVEL: "info"
+      # APNs (iOS push). Real key/team/bundle IDs come from .env.
+      APNS_DIRECT: "1"
+      APNS_URL: "https://api.push.apple.com/3/device/"
+      APNS_KEY_PATH: "/app/apns_keys/prod.p8"
+      APNS_PRODUCTION: "true"
+      # FCM HTTP v1 service-account credentials for Android push.
+      FCM_SERVICE_ACCOUNT_JSON_PATH: "/app/fcm/admin-account.json"
+      DISPATCHER_DECRYPT_MODE: "split-process"
+      INDEXER_DB_PATH: "/data/indexer.sqlite"
+      # Algorand watcher (real subscriber, dual app IDs).
+      ALGORAND_WATCHER_MODE: "production"
+      ALGOD_URL: "https://testnet-api.algonode.cloud"
+      ALGOD_TOKEN: ""
+      ALIAS_CHANNEL_APP_ID: "761304750"
+      SEALED_MESSAGE_APP_ID: "761304827"
+      PUSH_SLOT_MS: "30000"
+    volumes:
+      - "${INDEXER_DATA_ROOT:-/mnt/sealed-data/indexer}:/data"
+      - "${SECRETS_ROOT:-/mnt/sealed-data/secrets}/apns_keys:/app/apns_keys:ro"
+      - "${SECRETS_ROOT:-/mnt/sealed-data/secrets}/admin-account.json:/app/fcm/admin-account.json:ro"
+    networks:
+      sealed-net: {}
+    expose:
+      - "3000"
+
+networks:
+  sealed-net:
+    driver: bridge

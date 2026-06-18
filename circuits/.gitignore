@@ -1,0 +1,11 @@
+node_modules/
+build/
+# Trusted-setup artifacts + ceremony logs — NEVER commit.
+# Dev keys (zkey/ptau/vk_dev.json) and ceremony notes (dev log,
+# production-ceremony TODO) all live under keys/ and are intentionally
+# excluded from both git history and the public-release mirror
+# (see scripts/release_public.sh).
+keys/
+input.json
+proof.json
+public.json

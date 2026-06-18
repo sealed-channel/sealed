@@ -1,0 +1,69 @@
+# Caddyfile — Hetzner VPS public ingress for Sealed.
+#
+# Two sites, auto-TLS via Let's Encrypt:
+#   gw.sealed.channel  → OHTTP gateway container (127.0.0.1:8080)
+#   sealed.channel     → landing page / top-up (Next.js, 127.0.0.1:3001)
+#
+# Privacy: no access logs on the gateway site. The only client the gateway
+# ever sees is the OHTTP relay, but logging request paths/timing would still
+# build a traffic-analysis record — keep it dark. LP site logs without IPs.
+
+gw.sealed.channel {
+	reverse_proxy 127.0.0.1:8080
+
+	# No `log` directive: access logging stays disabled for this site.
+
+	header {
+		-Server
+	}
+}
+
+# Canonicalize on the apex so the browser origin matches NEXT_PUBLIC_APP_URL
+# (https://sealed.channel) — otherwise www-loaded pages fetch the apex API
+# cross-origin and get blocked by CORS.
+www.sealed.channel {
+	redir https://sealed.channel{uri} permanent
+}
+
+sealed.channel {
+	# Direct APK download (sideload). Served from a host dir, decoupled from the
+	# LP image so APK updates are a file swap — no rebuild. handle_path strips
+	# the /download prefix: /download/sealed-latest.apk → <root>/sealed-latest.apk
+	handle_path /download/* {
+		root * /mnt/sealed-data/downloads
+		@apk path *.apk
+		header @apk Content-Disposition attachment
+		header @apk Content-Type application/vnd.android.package-archive
+		file_server
+	}
+
+	# Everything else → the Next.js LP.
+	handle {
+		reverse_proxy 127.0.0.1:3001
+	}
+
+	log {
+		# stdout → journald (`journalctl -u caddy`). The packaged caddy unit
+		# runs ProtectSystem=strict, so a /var/log/caddy file writer is blocked
+		# at the systemd namespace regardless of ownership.
+		output stdout
+		# Drop client IPs and headers from LP logs — marketing site needs
+		# error visibility, not visitor identification.
+		format filter {
+			wrap json
+			fields {
+				request>remote_ip delete
+				request>client_ip delete
+				request>headers delete
+			}
+		}
+	}
+
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+	}
+}

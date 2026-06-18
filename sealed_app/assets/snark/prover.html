@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<!--
+  Headless snarkjs Groth16 prover host for the Android WebView backend
+  (lib/infra/zk/snark_prover.dart → _WebViewSnarkProver).
+
+  Why a WebView: flutter_js on Android uses QuickJS, whose bundled build has
+  no BigInt — snarkjs.min.js (547 BigInt literals) fails to even parse there
+  ("invalid number literal"). The system WebView (Chromium/V8) has full BigInt
+  AND native WebAssembly, so it runs snarkjs unmodified — same Groth16 proof,
+  on-device, witness never leaves the phone. iOS keeps the flutter_js/JSCore
+  path (JSCore has BigInt).
+
+  snarkjs.min.js is a UMD bundle: in a browser it self-attaches to
+  window.snarkjs, so no bootstrap/scaffolding is needed here.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="snarkjs.min.js"></script>
+    <script>
+      function _b64ToU8(b64) {
+        const bin = atob(b64);
+        const len = bin.length;
+        const out = new Uint8Array(len);
+        for (let i = 0; i < len; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      }
+
+      // Called from Dart via callAsyncJavaScript. Returns a JSON string
+      // {proof, publicSignals} so the bridge transfers a plain string.
+      window.sealedProve = async function (inputJson, zkeyB64, wasmB64) {
+        if (typeof snarkjs === 'undefined' || !snarkjs.groth16) {
+          throw new Error('snarkjs not loaded');
+        }
+        const input = JSON.parse(inputJson);
+        const zkey = _b64ToU8(zkeyB64);
+        const wasm = _b64ToU8(wasmB64);
+        const r = await snarkjs.groth16.fullProve(input, wasm, zkey);
+        return JSON.stringify(r);
+      };
+
+      // Readiness probe for Dart.
+      window.sealedProverReady = function () {
+        return typeof snarkjs !== 'undefined' && !!snarkjs.groth16
+          ? 'ok'
+          : 'missing';
+      };
+    </script>
+  </head>
+  <body>
+    snark
+  </body>
+</html>

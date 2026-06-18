@@ -1,0 +1,29 @@
+diff --git a/node_modules/algosdk/dist/cjs/transaction.js b/node_modules/algosdk/dist/cjs/transaction.js
+index 0000000..0000001 100644
+--- a/node_modules/algosdk/dist/cjs/transaction.js
++++ b/node_modules/algosdk/dist/cjs/transaction.js
+@@ -291,7 +291,10 @@
+                     typeof this.keyreg.voteFirst !== 'undefined' &&
+                     typeof this.keyreg.voteLast !== 'undefined' &&
+                     typeof this.keyreg.voteKeyDilution !== 'undefined')) {
+-                throw new Error(`Online key registration missing at least one of the following fields: voteKey, selectionKey, voteFirst, voteLast, voteKeyDilution`);
++                // PATCHED: TestNet blocks contain heartbeat-style keyregs with
++                // partial participation fields. Strict throw kills subscriber loop
++                // and prevents watermark advance. Demote to warn.
++                console.warn(`[algosdk patch] Online key registration missing field(s); accepting txn.`);
+             }
+             // The last option is an offline key registration where all the fields
+             // nonParticipation, voteKey, selectionKey, stateProofKey, voteFirst, voteLast, voteKeyDilution
+diff --git a/node_modules/algosdk/dist/esm/transaction.js b/node_modules/algosdk/dist/esm/transaction.js
+index 0000000..0000001 100644
+--- a/node_modules/algosdk/dist/esm/transaction.js
++++ b/node_modules/algosdk/dist/esm/transaction.js
+@@ -262,7 +262,7 @@
+                     typeof this.keyreg.voteFirst !== 'undefined' &&
+                     typeof this.keyreg.voteLast !== 'undefined' &&
+                     typeof this.keyreg.voteKeyDilution !== 'undefined')) {
+-                throw new Error(`Online key registration missing at least one of the following fields: voteKey, selectionKey, voteFirst, voteLast, voteKeyDilution`);
++                console.warn(`[algosdk patch] Online key registration missing field(s); accepting txn.`);
+             }
+             // The last option is an offline key registration where all the fields
+             // nonParticipation, voteKey, selectionKey, stateProofKey, voteFirst, voteLast, voteKeyDilution

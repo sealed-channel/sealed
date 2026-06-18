@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sealed holds wallet seeds and crypto keys in flutter_secure_storage, whose
+  AES app-key is wrapped by a device-bound Android Keystore key. Keystore keys
+  are NEVER included in cloud backup or device-to-device transfer, so any
+  backed-up secure-storage blob is undecryptable on the new device and crashes
+  with "SecretKeySpec: Empty key" during restore. We also do not want secret
+  key material leaving the device at all (privacy primitives are load-bearing).
+  Therefore: opt out of both cloud backup and device transfer entirely.
+  Applies on Android 12+ (API 31); allowBackup="false" covers older versions.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

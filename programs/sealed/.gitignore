@@ -1,0 +1,10 @@
+node_modules
+dist
+out/*
+!out/.gitkeep
+.env
+.env.local
+# Generated redeem codes contain preimages = bearer secrets = money. Never commit.
+.secrets/
+*-codes-*.json
+batch*.json

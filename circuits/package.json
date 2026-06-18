@@ -1,0 +1,24 @@
+{
+  "name": "sealed-circuits",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Sealed SNARK redeem circuit (Spec B). See internal/specs/SPEC-snark-redeem-B.md and internal/docs/adr/0001-snark-prover-backend.md.",
+  "scripts": {
+    "compile": "circom redeem.circom --r1cs --wasm --sym -o build/ -l node_modules",
+    "info": "snarkjs r1cs info build/redeem.r1cs",
+    "ptau:download": "echo 'Download powersoftau .ptau file (e.g. powersOfTau28_hez_final_17.ptau for 2^17 constraints) into ./keys/ before running setup'",
+    "setup": "snarkjs groth16 setup build/redeem.r1cs keys/pot.ptau keys/redeem_0000.zkey",
+    "contribute": "snarkjs zkey contribute keys/redeem_0000.zkey keys/redeem_final.zkey --name='Sealed v1 ceremony participant'",
+    "export-vk": "snarkjs zkey export verificationkey keys/redeem_final.zkey keys/vk.json",
+    "prove": "snarkjs groth16 fullprove input.json build/redeem_js/redeem.wasm keys/redeem_final.zkey proof.json public.json",
+    "verify": "snarkjs groth16 verify keys/vk.json public.json proof.json"
+  },
+  "devDependencies": {
+    "circom_tester": "^0.0.20",
+    "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.7",
+    "ffjavascript": "^0.3.1",
+    "snarkjs": "^0.7.4",
+    "tweetnacl": "^1.0.3"
+  }
+}
